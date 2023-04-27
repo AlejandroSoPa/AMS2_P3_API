@@ -86,7 +86,17 @@ async function getRanking (req, res) {
   let result = { status: "ERROR", message: "Unkown type" }
 
   if (receivedPOST) {
+    try {
+      var data = await db.query("SELECT id, username, puntuacio, temps, encerts, errades FROM RANKING ORDER BY puntuacio;")
+      console.log(data);
+      await utils.wait(1500)
+      if (data.length > 0) {
+        result = { status: "OK", result: data }
+      }
 
+    } catch (error) {
+      result = { status: "KO", result: "Unkown type" }
+    }
   }
 
   res.writeHead(200, { 'Content-Type': 'application/json' })
