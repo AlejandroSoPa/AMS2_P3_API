@@ -35,11 +35,11 @@ function shutDown() {
 
 // db init
 db.init({
-  host: process.env.MYSQLHOST || "localhost",
-  port: process.env.MYSQLPORT || 3306,
+  host: process.env.MYSQLHOST || "containers.railway.app",
+  port: process.env.MYSQLPORT || 5557,
   user: process.env.MYSQLUSER || "root",
-  password: process.env.MYSQLPASSWORD || "",
-  database: process.env.MYSQLDATABASE || ""
+  password: process.env.MYSQLPASSWORD || "qapFoM0a0T8VxtflbfLP",
+  database: process.env.MYSQLDATABASE || "railway"
 })
 ws.init(httpServer, port, db)
 
@@ -52,11 +52,28 @@ async function setRecord (req, res) {
   let receivedPOST = await post.getPostObject(req)
   let result = { status: "ERROR", message: "Unkown type" }
 
-  if (receivedPOST) {
+  if(receivedPOST){
+    let encertValue = 1;
+    let erradesValue = 1;
+    let score = 0;
+    score += (receivedPOST.encerts * encertValue);
+    score -= (receivedPOST.errades * erradesValue);
+    if(score < 0){
+      score = 0;
+    }
 
+    try{
+      await db.query("insert into RANKING(username, puntuacio, temps, encerts, errades, id_cicle) values('" + receivedPOST.username +"', "+ score +", "+ receivedPOST.temps +", "+ receivedPOST.encerts +", "+ receivedPOST.errades +", "+ receivedPOST.id_cicle +");");
+      result = {status: "OK", message: "Ranking inserted done"}
+      console.log('funsionó');
+    }catch(error){
+      result = {status: "ERROR", message: ":("}
+      console.log('no funsionó: ' + error);
+    }
+    
   }
 
-  res.writeHead(200, { 'Content-Type': 'application/json' })
+  res.writeHead(200, {'Content-Type': 'application/json' })
   res.end(JSON.stringify(result))
 }
 
