@@ -91,29 +91,9 @@ async function getRanking (req, res) {
     await utils.wait(1500)
     if (data.length > 0) {
       result = { status: "OK", result: data }
+    }
   }
 
   res.writeHead(200, { 'Content-Type': 'application/json' })
   res.end(JSON.stringify(result))
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
