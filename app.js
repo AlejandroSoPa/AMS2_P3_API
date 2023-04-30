@@ -87,7 +87,7 @@ async function getRanking (req, res) {
 
   if (receivedPOST) {
     try {
-      var data = await db.query("SELECT username, puntuacio, temps, encerts, errades FROM RANKING ORDER BY puntuacio LIMIT 20;")
+      var data = await db.query("SELECT username, puntuacio, temps FROM RANKING ORDER BY puntuacio LIMIT 20;")
       console.log(data);
       await utils.wait(1500)
       if (data.length > 0) {
