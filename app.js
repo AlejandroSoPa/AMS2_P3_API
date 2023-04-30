@@ -88,7 +88,7 @@ async function getRanking (req, res) {
   if (receivedPOST) {
     var data = await db.query("SELECT username, puntuacio, temps FROM RANKING ORDER BY puntuacio LIMIT 20;")
     console.log(data);
-    await utils.wait(1500)
+    await wait(1500)
     if (data.length > 0) {
       result = { status: "OK", result: data }
     }
@@ -97,3 +97,7 @@ async function getRanking (req, res) {
   res.writeHead(200, { 'Content-Type': 'application/json' })
   res.end(JSON.stringify(result))
 }
+
+function wait (ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
