@@ -44,7 +44,9 @@ db.init({
 ws.init(httpServer, port, db)
 
 
-
+function wait (ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
 
 app.post('/api/set_record', setRecord)
 async function setRecord (req, res) {
@@ -98,6 +100,4 @@ async function getRanking (req, res) {
   res.end(JSON.stringify(result))
 }
 
-function wait (ms) {
-    return new Promise(resolve => setTimeout(resolve, ms))
-  }
+
