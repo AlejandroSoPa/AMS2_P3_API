@@ -100,3 +100,26 @@ async function getRanking (req, res) {
 }
 
 
+app.post('/api/set_ocult', setOcult)
+async function setOcult (req, res) {
+
+  let receivedPOST = await post.getPostObject(req)
+  let result = { status: "ERROR", message: "Unkown type" }
+
+  if (receivedPOST) {
+
+    try{
+  
+      var data = await db.query("update RANKING set ocult = 1 where id = " + receivedPOST.rankingId + ";")
+      await wait(1500)
+      result = { status: "OK", result: ":)" }
+
+    }catch(error){
+      result = { status: "KO", result: ":(" }
+    }
+    
+  }
+
+  res.writeHead(200, { 'Content-Type': 'application/json' })
+  res.end(JSON.stringify(result))
+}
