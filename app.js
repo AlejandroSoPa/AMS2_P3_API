@@ -110,13 +110,13 @@ async function setOcult (req, res) {
 
     try{
   
-      var data = await db.query("update RANKING set ocult = 1 where id = " + receivedPOST.rankingId + ";")
-      await wait(1500)
+      await db.query("update RANKING set ocult = true where id = " + receivedPOST.rankingId + ";")
       result = { status: "OK", result: ":)" }
       console.log("ok");
 
     }catch(error){
       result = { status: "KO", result: ":(" }
+      console.log("ko");
     }
     
   }
