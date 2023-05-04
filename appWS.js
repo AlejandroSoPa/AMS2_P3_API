@@ -1,4 +1,6 @@
-// Description: WebSocket server for the app
+/*
+Desde el cliente se tiene que conectar y si puede conectarse enviar un json con los datos ej: {"type": "newUser", "nom":"Jordi", "cicle":"1"}
+*/
 
 const WebSocket = require('ws')
 const { v4: uuidv4 } = require('uuid')
@@ -9,6 +11,9 @@ class Obj {
 
         // Set reference to database
         this.db = db
+
+        //Lista de clientes conectados
+        this.clients = [] 
 
         // Run WebSocket server
         this.wss = new WebSocket.Server({ server: httpServer })
@@ -32,13 +37,13 @@ class Obj {
         const id = uuidv4()
         const color = Math.floor(Math.random() * 360)
         const metadata = { id, color }
-        this.socketsClients.set(ws, metadata)
-
+        this.socketsClients.set(ws, metadata); 
+        
         // Send clients list to everyone
-        this.sendClients()
+        this.sendClients();
 
         // What to do when a client is disconnected
-        ws.on("close", () => { this.socketsClients.delete(ws)  })
+        ws.on("close", () => { this.checkDisconnectCurrentConnections(ws, id)})
 
         // What to do when a client message is received
         ws.on('message', (bufferedMessage) => { this.newMessage(ws, id, bufferedMessage)})
@@ -46,14 +51,11 @@ class Obj {
 
     // Send clientsIds to everyone connected with websockets
     sendClients () {
-        var clients = []
-        this.socketsClients.forEach((value, key) => {
-            clients.push(value.id)
-        })
+
         this.wss.clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
                 var id = this.socketsClients.get(client).id
-                var messageAsString = JSON.stringify({ type: "clients", id: id, list: clients })
+                var messageAsString = JSON.stringify({ type: "clients", id: id, currentClients: this.socketsClients.size})
                 client.send(messageAsString)
             }
         })
@@ -80,29 +82,163 @@ class Obj {
         })
     }
 
+
     // A message is received from a websocket client
     newMessage (ws, id, bufferedMessage) {
+
         var messageAsString = bufferedMessage.toString()
         var messageAsObject = {}
             
         try { messageAsObject = JSON.parse(messageAsString) } 
         catch (e) { console.log("Could not parse bufferedMessage from WS message") }
 
-        if (messageAsObject.type == "bounce") {
-            var rst = { type: "bounce", message: messageAsObject.message }
-            ws.send(JSON.stringify(rst))
 
-        } else if (messageAsObject.type == "broadcast") {
+        switch(messageAsObject.type){
 
-            var rst = { type: "broadcast", origin: id, message: messageAsObject.message }
-            this.broadcast(rst)
+            case "newUser": //Cuando se conecte un user, si se ha contectado tiene que enviar esto: 
+                var nom = messageAsObject.nom;
+                var cicle = messageAsObject.cicle;
+                console.log("nom: " + nom + ", cicle: " + cicle);
 
-        } else if (messageAsObject.type == "private") {
+                this.addNewConectionToDB(nom, cicle, id);
 
-            var rst = { type: "private", origin: id, destination: messageAsObject.destination, message: messageAsObject.message }
-            this.private(rst)
+            break;
+        }
+
+
+        // if (messageAsObject.type == "bounce") {
+        //     var rst = { type: "bounce", message: messageAsObject.message }
+            
+        //     ws.send(JSON.stringify(rst))
+
+        // } else if (messageAsObject.type == "broadcast") {
+
+        //     var rst = { type: "broadcast", origin: id, message: messageAsObject.message }
+        //     this.broadcast(rst)
+
+        // } else if (messageAsObject.type == "private") {
+
+        //     var rst = { type: "private", origin: id, destination: messageAsObject.destination, message: messageAsObject.message }
+        //     this.private(rst)
+        // }
+    }
+
+
+    async addNewConectionToDB(nom, cicle, id){
+        try{
+            await this.db.query("insert into CONNEXIONS(nom, cicle, connectionId) values('" + nom +"', " + cicle +", '" + id.toString() +"');");
+            console.log("conexion añadida");
+            await this.recalculateTotems(cicle);
+        }catch(error){
+            console.log(error);
         }
     }
+
+
+    async recalculateTotems(cicle){
+        try{
+            let data = await this.db.query("select COUNT(id) as count from CONNEXIONS;");
+            var currentPlayersCount = data[0].count;
+            console.log("current conexions: " + currentPlayersCount);
+            
+            if(currentPlayersCount == 1){
+
+                //Array de Jsons
+                this.totemArray = [];
+                
+                //Sacar correctos
+                let correctTotems = await this.db.query("select id, nom, id_cicles from OCUPACIONS where id_cicles = " + cicle + " order by RAND();");
+
+                //Sacar incorrectos
+                let incorrectTotems = await this.db.query("select id, nom, id_cicles from OCUPACIONS where id_cicles <> " + cicle + " order by RAND();");
+
+                //Añadir a la lista de totems: 
+                for(let i = 0; i < 10; i++){
+                    if(i < 5){
+
+                        this.totemArray.push(correctTotems[i]);
+
+                    }else{
+
+                        this.totemArray.push(incorrectTotems[i]);
+                    }
+                }
+
+                for(let i = 0; i < this.totemArray.length; i++){
+                    console.log("ID ocupacio: " + this.totemArray[i].id);
+                    console.log("Nom ocupacio: " + this.totemArray[i].nom);
+                    console.log("Id cicle: " + this.totemArray[i].id_cicles);
+                    console.log("============================================================")
+                }
+
+                //Send totems to all clients: 
+                let totemsJson = {totems: this.totemArray};
+                this.broadcast(totemsJson);
+
+            }else{
+
+                //Sacar correctos
+                let correctTotems = await this.db.query("select id, nom, id_cicles from OCUPACIONS where id_cicles = " + cicle + " order by RAND();");
+
+                //Sacar incorrectos
+                let incorrectTotems = await this.db.query("select id, nom, id_cicles from OCUPACIONS where id_cicles <> " + cicle + " order by RAND();");
+
+                //Añadir a la lista de totems: 
+                for(let i = 0; i < 10; i++){
+                    if(i < 5){
+
+                        this.totemArray.push(correctTotems[i]);
+
+                    }else{
+
+                        this.totemArray.push(incorrectTotems[i]);
+                    }
+                }
+
+                for(let i = 0; i < this.totemArray.length; i++){
+                    console.log("ID ocupacio: " + this.totemArray[i].id);
+                    console.log("Nom ocupacio: " + this.totemArray[i].nom);
+                    console.log("Id cicle: " + this.totemArray[i].id_cicles);
+                    console.log("============================================================")
+                }
+
+                //Send totems to all clients: 
+                let totemsJson = {totems: this.totemArray};
+                this.broadcast(totemsJson);
+            }
+
+        }catch(error){
+            console.log(error);
+        }
+    }
+
+
+    async checkDisconnectCurrentConnections(ws, id){
+
+        this.socketsClients.delete(ws)
+
+        try{
+            await this.db.query("delete from CONNEXIONS where connectionId = '"+ id +"';");
+            console.log("conexion eliminada");
+
+            let data = await this.db.query("select COUNT(id) as count from CONNEXIONS;");
+            var currentPlayersCount = data[0].count;
+
+            if(currentPlayersCount == 0)
+            {
+                console.log("sin jugadores");
+                this.totemArray = []; //Clean totems
+
+            }else{
+                console.log("Quedan " + currentPlayersCount + " jugadores");
+            }
+
+        }catch(error){
+            console.log("checkCurrentConnections error: " + error);
+        }
+    }
+
+
 }
 
 module.exports = Obj
