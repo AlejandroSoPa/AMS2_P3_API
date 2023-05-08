@@ -34,10 +34,10 @@ function shutDown() {
 
 // db init
 db.init({
-  host: process.env.MYSQLHOST || "containers.railway.app",
-  port: process.env.MYSQLPORT || 5557,
+  host: process.env.MYSQLHOST || "containers-us-west-160.railway.app",
+  port: process.env.MYSQLPORT || 7414,
   user: process.env.MYSQLUSER || "root",
-  password: process.env.MYSQLPASSWORD || "qapFoM0a0T8VxtflbfLP",
+  password: process.env.MYSQLPASSWORD || "oLFYCX0nhLfC7hiy582C",
   database: process.env.MYSQLDATABASE || "railway"
 })
 ws.init(httpServer, port, db)
@@ -45,7 +45,7 @@ ws.init(httpServer, port, db)
 
 function wait (ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
-  }
+}
 
 app.post('/api/set_record', setRecord)
 async function setRecord (req, res) {

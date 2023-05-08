@@ -37,8 +37,11 @@ class Obj {
         const id = uuidv4()
         const color = Math.floor(Math.random() * 360)
         const metadata = { id, color }
-        this.socketsClients.set(ws, metadata); 
-        
+
+        this.socketsClients.set(ws, []); 
+        console.log("current players: " + this.socketsClients.size);
+
+
         // Send clients list to everyone
         this.sendClients();
 
@@ -92,13 +95,12 @@ class Obj {
         try { messageAsObject = JSON.parse(messageAsString) } 
         catch (e) { console.log("Could not parse bufferedMessage from WS message") }
 
-
+        //Registrar conexion
         switch(messageAsObject.type){
 
             case "newUser": //Cuando se conecte un user, si se ha contectado tiene que enviar esto: 
                 var nom = messageAsObject.nom;
                 var cicle = messageAsObject.cicle;
-                console.log("nom: " + nom + ", cicle: " + cicle);
 
                 this.addNewConectionToDB(nom, cicle, id);
 
@@ -126,7 +128,12 @@ class Obj {
 
     async addNewConectionToDB(nom, cicle, id){
         try{
-            await this.db.query("insert into CONNEXIONS(nom, cicle, connectionId) values('" + nom +"', " + cicle +", '" + id.toString() +"');");
+            const fecha = new Date();
+            const opciones = { timeZone: "Europe/Madrid" };
+            const fechaEspaña = fecha.toLocaleString("es-ES", opciones);
+            const fechaSQL = fechaEspaña.replace(/(\d+)\/(\d+)\/(\d+), (\d+):(\d+):(\d+)/, "$3-$2-$1 $4:$5:$6");
+       
+            await this.db.query("insert into CONNEXIONS(nom, cicle, connectionId, connectat) values('" + nom +"', " + cicle +", '" + id.toString() +"', '"+ fechaSQL +"');");
             console.log("conexion añadida");
             await this.recalculateTotems(cicle);
         }catch(error){
@@ -137,8 +144,8 @@ class Obj {
 
     async recalculateTotems(cicle){
         try{
-            let data = await this.db.query("select COUNT(id) as count from CONNEXIONS;");
-            var currentPlayersCount = data[0].count;
+
+            var currentPlayersCount = this.socketsClients.size;
             console.log("current conexions: " + currentPlayersCount);
             
             if(currentPlayersCount == 1){
@@ -217,12 +224,16 @@ class Obj {
 
         this.socketsClients.delete(ws)
 
-        try{
-            await this.db.query("delete from CONNEXIONS where connectionId = '"+ id +"';");
-            console.log("conexion eliminada");
+        const fecha = new Date();
+        const opciones = { timeZone: "Europe/Madrid" };
+        const fechaEspaña = fecha.toLocaleString("es-ES", opciones);
+        const fechaSQL = fechaEspaña.replace(/(\d+)\/(\d+)\/(\d+), (\d+):(\d+):(\d+)/, "$3-$2-$1 $4:$5:$6");
 
-            let data = await this.db.query("select COUNT(id) as count from CONNEXIONS;");
-            var currentPlayersCount = data[0].count;
+        try{
+            await this.db.query("update CONNEXIONS set desconnectat = '"+ fechaSQL +"' where connectionId = '"+ id +"';");
+            console.log("desconnexion actualizada");
+
+            var currentPlayersCount = this.socketsClients.size;
 
             if(currentPlayersCount == 0)
             {
