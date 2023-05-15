@@ -77,7 +77,29 @@ async function setRecord (req, res) {
   res.end(JSON.stringify(result))
 }
 
+app.post('/api/get_cicle', getCicle)
+async function getCicle (req, res) {
 
+  let receivedPOST = await post.getPostObject(req)
+  let result = { status: "ERROR", message: "Unkown type" }
+
+  if(receivedPOST){
+
+    try{
+      var data = await db.query("select id from CICLES where nom = '" + receivedPOST.nomCicle + "');");
+      console.log(data);
+      result = {status: "OK", message: data}
+      console.log('funsionó');
+    }catch(error){
+      result = {status: "ERROR", message: ":("}
+      console.log('no funsionó: ' + error);
+    }
+    
+  }
+  
+  res.writeHead(200, {'Content-Type': 'application/json' })
+  res.end(JSON.stringify(result))
+}
 
 app.post('/api/get_ranking', getRanking)
 async function getRanking (req, res) {
@@ -121,29 +143,5 @@ async function setOcult (req, res) {
   }
 
   res.writeHead(200, { 'Content-Type': 'application/json' })
-  res.end(JSON.stringify(result))
-}
-
-app.post('/api/get_cicle', getCicle)
-async function getCicle (req, res) {
-
-  let receivedPOST = await post.getPostObject(req)
-  let result = { status: "ERROR", message: "Unkown type" }
-
-  if(receivedPOST){
-
-    try{
-      var data = await db.query("select id from CICLES where nom = '" + receivedPOST.nomCicle + "');");
-      console.log(data);
-      result = {status: "OK", message: data}
-      console.log('funsionó');
-    }catch(error){
-      result = {status: "ERROR", message: ":("}
-      console.log('no funsionó: ' + error);
-    }
-    
-  }
-  
-  res.writeHead(200, {'Content-Type': 'application/json' })
   res.end(JSON.stringify(result))
 }
