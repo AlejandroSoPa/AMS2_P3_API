@@ -66,7 +66,6 @@ async function setRecord (req, res) {
     try{
       await db.query("insert into RANKING(username, puntuacio, temps, encerts, errades, id_cicle) values('" + receivedPOST.username +"', "+ score +", "+ receivedPOST.temps +", "+ receivedPOST.encerts +", "+ receivedPOST.errades +", "+ receivedPOST.id_cicle +");");
       result = {status: "OK", message: "Ranking inserted done"}
-      console.log('funsionó');
     }catch(error){
       result = {status: "ERROR", message: ":("}
       console.log('no funsionó: ' + error);
@@ -89,7 +88,7 @@ async function getRanking (req, res) {
   if (receivedPOST) {
     var data = await db.query("SELECT id, username, puntuacio, temps, encerts, errades, ocult FROM RANKING ORDER BY puntuacio DESC LIMIT 20;")
     console.log(data);
-    await wait(1500)
+    await wait(500)
     if (data.length > 0) {
       result = { status: "OK", result: data }
     }
@@ -123,13 +122,28 @@ async function setOcult (req, res) {
 
   res.writeHead(200, { 'Content-Type': 'application/json' })
   res.end(JSON.stringify(result))
+}
 
+app.post('/api/get_cicle', getCicle)
+async function getCicle (req, res) {
 
+  let receivedPOST = await post.getPostObject(req)
+  let result = { status: "ERROR", message: "Unkown type" }
 
+  if(receivedPOST){
 
-
-
-
-
-
+    try{
+      var data = await db.query("select id from CICLES where nom = '" + receivedPOST.nomCicle + "');");
+      console.log(data);
+      result = {status: "OK", message: data}
+      console.log('funsionó');
+    }catch(error){
+      result = {status: "ERROR", message: ":("}
+      console.log('no funsionó: ' + error);
+    }
+    
+  }
+  
+  res.writeHead(200, {'Content-Type': 'application/json' })
+  res.end(JSON.stringify(result))
 }
