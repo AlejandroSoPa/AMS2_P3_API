@@ -108,7 +108,7 @@ class Obj {
             break;
             case "remove_totem": //Usa la id_totem para eliminar un totem, pero desde el cliente de momento se envia el json del totem entero.
 
-                var totemToRemoveId = messageAsObject.totem.id_totem;
+                var totemToRemoveId = messageAsObject.totemId;
                 var index = -1;
                 var result;
             
@@ -121,7 +121,7 @@ class Obj {
                 console.log("Index: " + index);
                 if (index !== -1) {
                     this.totemArray.splice(index, 1);
-                    result = {status:"OK", totem_eliminat: totemToRemoveId};
+                    result = {type:"deleteTotemId", totem_eliminat: totemToRemoveId};
 
                 }else{
                     result = {status:"KO", totem_eliminat: "Totem no eliminat"};
@@ -230,7 +230,7 @@ class Obj {
                 }
 
                 //Send totems to all clients: 
-                let totemsJson = {totems: this.totemArray};
+                let totemsJson = {type:"recibeTotems", totems: this.totemArray};
                 this.broadcast(totemsJson);
 
             }else{
@@ -265,7 +265,7 @@ class Obj {
                 }
 
                 //Send totems to all clients: 
-                let totemsJson = {totems: this.totemArray};
+                let totemsJson = {type:"recibeTotems", totems: this.totemArray};
                 this.broadcast(totemsJson);
             }
 
