@@ -68,10 +68,12 @@ class Obj {
     // Send a message to all websocket clients
     broadcast (obj) {
         this.wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                var messageAsString = JSON.stringify(obj)
-                client.send(messageAsString)
-            }
+            // if (client.readyState === WebSocket.OPEN) {
+            //     var messageAsString = JSON.stringify(obj)
+            //     client.send(messageAsString)
+            // }
+            var messageAsString = JSON.stringify(obj)
+            client.send(messageAsString)
         })
     }
   
