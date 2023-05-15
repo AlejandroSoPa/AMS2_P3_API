@@ -87,26 +87,7 @@ async function getRanking (req, res) {
   let result = { status: "ERROR", message: "Unkown type" }
 
   if (receivedPOST) {
-    var data = await db.query("SELECT id, username, puntuacio, temps FROM RANKING WHERE ocult = 0 ORDER BY puntuacio DESC;")
-    console.log(data);
-    await wait(1500)
-    if (data.length > 0) {
-      result = { status: "OK", result: data }
-    }
-  }
-
-  res.writeHead(200, { 'Content-Type': 'application/json' })
-  res.end(JSON.stringify(result))
-}
-
-app.post('/api/get_ranking_admin', getRankingAdmin)
-async function getRankingAdmin (req, res) {
-
-  let receivedPOST = await post.getPostObject(req)
-  let result = { status: "ERROR", message: "Unkown type" }
-
-  if (receivedPOST) {
-    var data = await db.query("SELECT id, username, puntuacio, temps, encerts, errades, ocult FROM RANKING ORDER BY puntuacio DESC;")
+    var data = await db.query("SELECT id, username, puntuacio, temps, encerts, errades, ocult FROM RANKING ORDER BY puntuacio DESC LIMIT 20;")
     console.log(data);
     await wait(1500)
     if (data.length > 0) {

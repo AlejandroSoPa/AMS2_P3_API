@@ -47,9 +47,10 @@ class Obj {
 
         // What to do when a client is disconnected
         ws.on("close", () => { this.checkDisconnectCurrentConnections(ws, id)})
-
+        console.log(id);
         // What to do when a client message is received
         ws.on('message', (bufferedMessage) => { this.newMessage(ws, id, bufferedMessage)})
+        //ws.on('message', (bufferedMessage) => { console.log(bufferedMessage);})
     }
 
     // Send clientsIds to everyone connected with websockets
@@ -91,7 +92,7 @@ class Obj {
 
         var messageAsString = bufferedMessage.toString()
         var messageAsObject = {}
-            
+        
         try { messageAsObject = JSON.parse(messageAsString) } 
         catch (e) { console.log("Could not parse bufferedMessage from WS message") }
 
@@ -101,10 +102,51 @@ class Obj {
             case "newUser": //Cuando se conecte un user, si se ha contectado tiene que enviar esto: 
                 var nom = messageAsObject.nom;
                 var cicle = messageAsObject.cicle;
-
+                console.log("hola");
                 this.addNewConectionToDB(nom, cicle, id);
 
             break;
+            case "remove_totem": //Usa la id_totem para eliminar un totem, pero desde el cliente de momento se envia el json del totem entero.
+
+                var totemToRemoveId = messageAsObject.totem.id_totem;
+                var index = -1;
+                var result;
+            
+                for(let i = 0; i < this.totemArray.length; i++){
+                    if(this.totemArray[i].id_totem === totemToRemoveId){
+                        index = i;
+                    }
+                }
+
+                console.log("Index: " + index);
+                if (index !== -1) {
+                    this.totemArray.splice(index, 1);
+                    result = {status:"OK", totem_eliminat: totemToRemoveId};
+
+                }else{
+                    result = {status:"KO", totem_eliminat: "Totem no eliminat"};
+                }
+                
+
+                ws.send(JSON.stringify(result));
+
+                console.log("\n\nArray de totems sin el totem eliminado: ");
+                for(let i = 0; i < this.totemArray.length; i++){
+                    console.log("ID ocupacio: " + this.totemArray[i].id);
+                    console.log("Nom ocupacio: " + this.totemArray[i].nom);
+                    console.log("Id cicle: " + this.totemArray[i].id_cicles);
+                    console.log("Id totem: " + this.totemArray[i].id_totem);
+                    console.log("============================================================")
+                }
+                
+            break;
+            case "playerPosition": //PlayerName,playerPos. 
+                var position = messageAsObject;
+                
+                ws.send(JSON.stringify(position));
+            break;
+
+
         }
 
 
@@ -147,7 +189,7 @@ class Obj {
 
             var currentPlayersCount = this.socketsClients.size;
             console.log("current conexions: " + currentPlayersCount);
-            
+
             if(currentPlayersCount == 1){
 
                 //Array de Jsons
@@ -161,13 +203,21 @@ class Obj {
 
                 //Añadir a la lista de totems: 
                 for(let i = 0; i < 10; i++){
+
+                    var totemPosX = Math.floor(Math.random() * 800);
+                    var totemPosY = Math.floor(Math.random() * 450);
+
                     if(i < 5){
 
-                        this.totemArray.push(correctTotems[i]);
+                        let totemId = this.generateTotemId();
+                        let correctTotemResult = {"id":correctTotems[i].id, "nom":correctTotems[i].nom, "id_cicles":correctTotems[i].id_cicles, "id_totem": totemId, "posX":totemPosX, "posY":totemPosY};
+                        this.totemArray.push(correctTotemResult);
 
                     }else{
 
-                        this.totemArray.push(incorrectTotems[i]);
+                        let totemId = this.generateTotemId();
+                        let correctTotemResult = {"id":incorrectTotems[i].id, "nom":incorrectTotems[i].nom, "id_cicles":incorrectTotems[i].id_cicles, "id_totem": totemId,  "posX":totemPosX, "posY":totemPosY};
+                        this.totemArray.push(correctTotemResult);
                     }
                 }
 
@@ -175,6 +225,7 @@ class Obj {
                     console.log("ID ocupacio: " + this.totemArray[i].id);
                     console.log("Nom ocupacio: " + this.totemArray[i].nom);
                     console.log("Id cicle: " + this.totemArray[i].id_cicles);
+                    console.log("Id totem: " + this.totemArray[i].id_totem);
                     console.log("============================================================")
                 }
 
@@ -194,11 +245,15 @@ class Obj {
                 for(let i = 0; i < 10; i++){
                     if(i < 5){
 
-                        this.totemArray.push(correctTotems[i]);
+                        let totemId = this.generateTotemId();
+                        let correctTotemResult = {"id":correctTotems[i].id, "nom":correctTotems[i].nom, "id_cicles":correctTotems[i].id_cicles, "id_totem": totemId};
+                        this.totemArray.push(correctTotemResult);
 
                     }else{
 
-                        this.totemArray.push(incorrectTotems[i]);
+                        let totemId = this.generateTotemId();
+                        let correctTotemResult = {"id":incorrectTotems[i].id, "nom":incorrectTotems[i].nom, "id_cicles":incorrectTotems[i].id_cicles, "id_totem": totemId};
+                        this.totemArray.push(correctTotemResult);
                     }
                 }
 
@@ -249,6 +304,31 @@ class Obj {
         }
     }
 
+
+    generateTotemId(){
+        let charsList = [];
+        let tokenSize = 10;
+        let token = "T";
+
+        for(let i = 0; i < 10; i ++){
+            charsList.push(i);
+        }
+
+        for(let i = 65; i <= 90; i++) {
+            charsList.push(String.fromCharCode(i));
+        }
+
+        for(let i = 97; i <= 122; i++) {
+            charsList.push(String.fromCharCode(i));
+        }
+        
+        for(let i = 0; i < tokenSize - 1; i++){
+            let randomNum = Math.round(Math.random()*(charsList.length - 1));
+            token += charsList[randomNum];
+        }
+
+        return token;
+    }
 
 }
 
