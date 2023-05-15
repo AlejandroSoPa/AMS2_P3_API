@@ -87,7 +87,7 @@ async function getCicle (req, res) {
 
     try{
       console.log(receivedPOST.nomCicle);
-      var data = await db.query("SELECT id FROM CICLES WHERE nom = '" + receivedPOST.nomCicle + "');");
+      var data = await db.query("SELECT id FROM CICLES WHERE nom = '" + receivedPOST.nomCicle + "';");
       console.log(data);
       result = {status: "OK", message: data}
       console.log('funsionó');
