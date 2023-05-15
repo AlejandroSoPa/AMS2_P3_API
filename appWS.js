@@ -95,6 +95,8 @@ class Obj {
         var messageAsString = bufferedMessage.toString()
         var messageAsObject = {}
         
+        console.log("PRINT: " + messageAsString);
+
         try { messageAsObject = JSON.parse(messageAsString) } 
         catch (e) { console.log("Could not parse bufferedMessage from WS message") }
 
